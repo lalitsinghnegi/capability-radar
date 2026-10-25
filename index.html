@@ -1,0 +1,1225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capability Radar · prototype</title>
+<meta name="description" content="Capability Radar concept prototype: a single source of truth for digital features, teams and points of contact. Sample data only.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='22' fill='%233A4FD6'/%3E%3Cpath d='M24 24L24 2A22 22 0 0 1 39.6 8.4Z' fill='%233DDC97' fill-opacity='.5'/%3E%3Ccircle cx='31' cy='12.5' r='3' fill='%233DDC97'/%3E%3Ccircle cx='24' cy='24' r='3' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Serif:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#F4F5F7}
+.app{--bg:#F4F5F7;--surface:#FFFFFF;--surface-2:#FAFBFC;--line:#E1E4EA;--line-strong:#C9CEDB;--ink:#15192B;--ink-2:#3A4052;--muted:#5A6072;--chip:#EEF0F4;--accent-soft:#EEF2FD;--accent-ink:#163A9C;--link:#1F4FD1;--good:#1E6B45;--bad:#8A2E0E;--chrome:#15192B;color-scheme:light}
+.app.dark{--bg:#0E111C;--surface:#171B2A;--surface-2:#1C2133;--line:#2B3147;--line-strong:#3F4763;--ink:#E9ECF4;--ink-2:#C6CBD9;--muted:#A0A8BD;--chip:#232942;--accent-soft:#1E2A52;--accent-ink:#B3C5FF;--link:#93ADFF;--good:#5FD69E;--bad:#FF8F80;--chrome:#080A12;color-scheme:dark}
+.app{--grad-primary:linear-gradient(135deg,#1F4FD1 0%,#4A3FD3 60%,#6A4BD6 100%);--grad-chrome:linear-gradient(115deg,#0F1330 0%,#16245E 55%,#2E2470 100%);--grad-soft:linear-gradient(135deg,rgba(31,79,209,.10) 0%,rgba(14,143,128,.08) 100%);--grad-ink:linear-gradient(135deg,#15192B 0%,#2A3366 100%);--page-bg:radial-gradient(900px 420px at 8% -8%,rgba(31,79,209,.10),transparent 70%),radial-gradient(800px 380px at 100% 0%,rgba(106,75,214,.08),transparent 70%),#F4F5F7;--c-blue:#1F4FD1;--c-teal:#0E8F80;--c-violet:#6A4BD6;--c-amber:#C27C0E;--c-coral:#D2533F;--c-rose:#C2417A;--c-slate:#5B6886;--c-navy:#15192B;--shadow:0 8px 24px rgba(21,25,43,.08)}
+.app.dark{--grad-primary:linear-gradient(135deg,#3D63F0 0%,#5B4BE0 60%,#7A5CF0 100%);--grad-chrome:linear-gradient(115deg,#05070F 0%,#0E1640 55%,#1E1850 100%);--grad-soft:linear-gradient(135deg,rgba(111,147,255,.16) 0%,rgba(60,205,184,.10) 100%);--grad-ink:linear-gradient(135deg,#2A3366 0%,#3D2F7A 100%);--page-bg:radial-gradient(900px 420px at 8% -8%,rgba(61,99,240,.18),transparent 70%),radial-gradient(800px 380px at 100% 0%,rgba(122,92,240,.14),transparent 70%),#0E111C;--c-blue:#6F93FF;--c-teal:#3CCDB8;--c-violet:#A48DFF;--c-amber:#F2B44B;--c-coral:#FF8A73;--c-rose:#F27AAE;--c-slate:#9AA6C4;--c-navy:#C9D2EA;--shadow:0 8px 28px rgba(0,0,0,.45)}
+.app input{background:var(--surface);color:var(--ink)}
+.app section{animation:rr-rise .5s cubic-bezier(.2,.7,.2,1) both;transition:box-shadow .25s ease,border-color .25s ease}
+.app section:hover{box-shadow:var(--shadow)}
+.app button{transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,transform .12s ease,filter .18s ease}
+.app button:hover:not(:disabled){filter:brightness(1.06)}
+.app button:active:not(:disabled){transform:translateY(1px)}
+.app tbody tr{transition:background-color .18s ease}
+.app tbody tr:hover{background:var(--surface-2)}
+.kpi{position:relative;overflow:hidden;animation:rr-rise .5s cubic-bezier(.2,.7,.2,1) both;transition:transform .2s ease,box-shadow .2s ease}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.kpi:nth-child(2){animation-delay:.06s}.kpi:nth-child(3){animation-delay:.12s}.kpi:nth-child(4){animation-delay:.18s}
+.heat-cell{transition:transform .15s ease,box-shadow .15s ease}
+.heat-cell:hover{transform:scale(1.08);box-shadow:0 2px 10px rgba(31,79,209,.35)}
+.bar-fill{transform-origin:left center;animation:rr-grow .9s cubic-bezier(.2,.7,.2,1) both}
+.live-dot{position:relative;display:inline-block;width:8px;height:8px;border-radius:999px;background:var(--c-teal)}
+.live-dot::after{content:"";position:absolute;inset:-4px;border-radius:999px;border:2px solid var(--c-teal);animation:rr-pulse 1.8s ease-out infinite}
+.overlay{animation:rr-fade .2s ease-out both}
+.dialog{animation:rr-pop .25s cubic-bezier(.2,.7,.2,1) both}
+.stripe{height:3px;display:flex}.stripe span{flex:1}
+@keyframes rr-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes rr-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes rr-pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}
+@keyframes rr-fade{from{opacity:0}to{opacity:1}}
+@keyframes rr-pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.app *,.app *::after{animation:none!important;transition:none!important}}
+.app input::placeholder{color:var(--muted)}
+.app button:focus-visible,.app a:focus-visible,.app input:focus-visible{outline:2px solid #93ADFF;outline-offset:2px}
+a{color:var(--link)}a:hover{color:var(--accent-ink)}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:10px 12px;font-size:14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="text/plain" id="dc-template"><div class="{{appCls}}" style="min-height: 100vh; background: var(--page-bg); font-family: 'IBM Plex Sans', sans-serif; color: var(--ink)">
+
+<header style="background: var(--grad-chrome); color: #FFFFFF">
+<div style="max-width: 1360px; margin: 0 auto; padding: 14px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<div style="display: flex; align-items: center; gap: 12px">
+<svg width="44" height="44" viewBox="0 0 48 48" role="img" aria-label="Capability Radar logo">
+<defs><linearGradient id="logo-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E62F5"></stop><stop offset="1" stop-color="#6A4BD6"></stop></linearGradient></defs>
+<circle cx="24" cy="24" r="22" fill="url(#logo-g)"></circle>
+<circle cx="24" cy="24" r="15" fill="none" stroke="#9DB4FF" stroke-width="1.2" stroke-dasharray="2 2.5"></circle>
+<circle cx="24" cy="24" r="8" fill="none" stroke="#9DB4FF" stroke-width="1.2" stroke-dasharray="2 2.5"></circle>
+<path d="M24 24L24 2A22 22 0 0 1 39.6 8.4Z" fill="#3DDC97" fill-opacity="0.35"></path>
+<line x1="24" y1="24" x2="39.6" y2="8.4" stroke="#3DDC97" stroke-width="1.6" stroke-linecap="round"></line>
+<circle cx="31" cy="12.5" r="2.6" fill="#3DDC97"></circle>
+<circle cx="14" cy="30" r="2.2" fill="#FFC145"></circle>
+<circle cx="35" cy="31" r="2" fill="#FF6B5B"></circle>
+<circle cx="24" cy="24" r="2.4" fill="#FFFFFF"></circle>
+</svg>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-family: 'IBM Plex Serif', serif; font-size: 24px; font-weight: 600; line-height: 1.1">Capability Radar</div>
+<div style="font-size: 13px; color: #C9CEDB">Concept prototype · sample data only</div>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<div role="group" aria-label="View as" style="display: flex; flex-wrap: wrap; gap: 6px; background: #262B40; padding: 4px; border-radius: 10px">
+<sc-for list="{{roles}}" as="r" hint-placeholder-count="3">
+<button type="button" onClick="{{r.pick}}" aria-pressed="{{r.pressed}}" style="{{r.style}}">{{r.label}}</button>
+</sc-for>
+</div>
+<button type="button" onClick="{{toggleTheme}}" aria-pressed="{{darkPressed}}" aria-label="Dark mode" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid #3F4763; background: #262B40; color: #FFFFFF; cursor: pointer; display: inline-flex; align-items: center; gap: 8px">
+<sc-if value="{{isDark}}" hint-placeholder-val="{{ false }}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+</sc-if>
+<sc-if value="{{isLight}}" hint-placeholder-val="{{ true }}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+</sc-if>
+<span>{{themeLabel}}</span>
+</button>
+</div>
+</div>
+<div aria-hidden="true" style="height: 3px; background: linear-gradient(90deg,#1F4FD1 0%,#0E8F80 25%,#6A4BD6 50%,#C27C0E 75%,#D2533F 100%)"></div>
+</header>
+
+<div style="max-width: 1360px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 13px; color: var(--muted)">
+<span style="background: var(--surface); border: 1px solid var(--line); padding: 6px 10px; border-radius: 999px">Signed in as: <strong style="color: var(--ink)">{{roleName}}</strong></span>
+<span>{{roleScope}}</span>
+</div>
+
+<!-- ================= EXECUTIVE: TOP ================= -->
+<sc-if value="{{isExec}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 20px">
+
+<section style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline">
+<h2 style="margin: 0; font-family: 'IBM Plex Serif', serif; font-size: 22px; font-weight: 600">Good morning. Here's what changed in the last 24 hours.</h2>
+<span style="font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 8px"><span class="live-dot" aria-hidden="true"></span>Live daily brief · Mon, Oct 19</span>
+</div>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; line-height: 1.5">
+<li>2 new projects entered intake. <strong>1 overlaps</strong> an existing savings tool in Immunology.</li>
+<li>3 sites launched (Oncology ×2, Aesthetics ×1). All use the shared sign-up component.</li>
+<li>1 label update affects <strong>9 live pages</strong> across 3 sites. Owners have been notified.</li>
+</ul>
+</section>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+<div class="kpi" style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 4px">
+<div aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 0; height: 4px; background: {{k.grad}}"></div>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+<div style="font-size: 13px; color: var(--muted)">{{k.label}}</div>
+<span aria-hidden="true" style="width: 30px; height: 30px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; background: {{k.grad}}; color: #FFFFFF; font-size: 15px; font-weight: 700">{{k.icon}}</span>
+</div>
+<div style="font-size: 32px; font-weight: 600; color: var(--ink)">{{k.value}}</div>
+<div style="font-size: 13px; color: {{k.noteColor}}">{{k.note}}</div>
+</div>
+</sc-for>
+</div>
+
+<section style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Portfolio heatmap: how many of each feature exist</h2>
+<span style="font-size: 13px; color: var(--muted)">Tap a portfolio or any number to open it in the radar below.</span>
+</div>
+<div style="overflow-x: auto">
+<table>
+<thead>
+<tr>
+<th>Portfolio</th>
+<sc-for list="{{capNames}}" as="c" hint-placeholder-count="6"><th style="text-align: center">{{c}}</th></sc-for>
+<th style="text-align: center">Live sites</th>
+</tr>
+</thead>
+<tbody>
+<sc-for list="{{heat}}" as="row" hint-placeholder-count="5">
+<tr style="{{row.rowStyle}}">
+<td><button type="button" onClick="{{row.pick}}" style="background: none; border: 0; padding: 6px 0; font: inherit; font-weight: 600; color: var(--link); cursor: pointer; min-height: 44px; text-align: left">{{row.name}}</button></td>
+<sc-for list="{{row.cells}}" as="cell" hint-placeholder-count="6">
+<td style="text-align: center; padding: 6px"><button type="button" class="heat-cell" onClick="{{cell.pick}}" aria-label="{{cell.aria}}" style="{{cell.style}}">{{cell.n}}</button></td>
+</sc-for>
+<td style="text-align: center; font-weight: 600">{{row.sites}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</sc-if>
+
+<!-- ================= PRODUCT OWNER: TOP ================= -->
+<sc-if value="{{isPO}}" hint-placeholder-val="{{ false }}">
+<section style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-family: 'IBM Plex Serif', serif; font-size: 22px; font-weight: 600">Before you build: does it already exist?</h2>
+<label for="find" style="font-size: 13px; color: var(--muted)">Search features across every site</label>
+<input id="find" type="search" value="sign-up form" style="font: inherit; font-size: 15px; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 10px; min-height: 44px">
+<div style="font-size: 14px; color: var(--muted)"><strong style="color: var(--ink)">{{signupLine}}</strong> Best ones to reuse:</div>
+<div style="overflow-x: auto">
+<table>
+<thead><tr><th>Feature</th><th>Where it runs</th><th>Platform</th><th>Owner to contact</th><th>Reuse</th></tr></thead>
+<tbody>
+<sc-for list="{{found}}" as="f" hint-placeholder-count="4">
+<tr><td style="font-weight: 600">{{f.name}}</td><td>{{f.where}}</td><td>{{f.platform}}</td><td><a href="#radar">{{f.owner}}</a></td><td><span style="{{f.tag}}">{{f.reuse}}</span></td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+
+<!-- ================= RADAR EXPLORER (exec + PO) ================= -->
+<sc-if value="{{showExplorer}}" hint-placeholder-val="{{ true }}">
+<section id="radar" style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-family: 'IBM Plex Serif', serif; font-size: 22px; font-weight: 600">Radar explorer</h2>
+<div style="font-size: 14px; color: var(--muted)">Drill from any portfolio down to the person to call.</div>
+</div>
+<div role="group" aria-label="Start from" style="display: flex; flex-wrap: wrap; gap: 4px; background: var(--chip); padding: 4px; border-radius: 10px">
+<sc-for list="{{modes}}" as="m" hint-placeholder-count="2">
+<button type="button" onClick="{{m.pick}}" aria-pressed="{{m.pressed}}" style="{{m.style}}">{{m.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{isCols}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<nav aria-label="Drill-down path" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 14px">
+<sc-for list="{{crumbs}}" as="c" hint-placeholder-count="5">
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em">{{c.level}}</span><span style="font-weight: 600; background: var(--accent-soft); color: var(--accent-ink); padding: 4px 10px; border-radius: 999px">{{c.value}}</span><sc-if value="{{c.more}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="color: #9AA0AE">›</span></sc-if></span>
+</sc-for>
+</nav>
+
+<div style="display: flex; overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2)">
+<sc-for list="{{columns}}" as="col" hint-placeholder-count="4">
+<div style="flex: 0 0 236px; border-right: 1px solid var(--line); display: flex; flex-direction: column">
+<div style="padding: 12px 14px 8px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+<span style="font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em">{{col.step}} · {{col.title}}</span>
+<span style="font-size: 12px; color: var(--muted)">{{col.count}}</span>
+</div>
+<div style="padding: 0 8px 10px; display: flex; flex-direction: column; gap: 4px; max-height: 440px; overflow-y: auto">
+<sc-for list="{{col.items}}" as="it" hint-placeholder-count="4">
+<button type="button" onClick="{{it.pick}}" aria-pressed="{{it.pressed}}" style="{{it.style}}">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+<span style="font-weight: 600; font-size: 14px">{{it.label}}</span>
+<span style="{{it.subStyle}}">{{it.sub}}</span>
+</span>
+<span aria-hidden="true" style="font-size: 18px">›</span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+
+<div style="flex: 1 0 320px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; background: var(--surface); border-radius: 0 12px 12px 0">
+<span style="font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em">{{contactStep}} · Point of contact</span>
+<div style="display: flex; align-items: center; gap: 12px">
+<div aria-hidden="true" style="width: 48px; height: 48px; border-radius: 999px; background: var(--grad-ink); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600">{{person.initials}}</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-family: 'IBM Plex Serif', serif; font-size: 20px; font-weight: 600">{{person.name}}</div>
+<div style="font-size: 14px; color: var(--muted)">{{person.role}} · {{person.team}}</div>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 0; background: var(--grad-primary); color: #FFFFFF; cursor: pointer">Message in Teams</button>
+<button type="button" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); cursor: pointer">Book 15 min</button>
+</div>
+<div style="border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 14px">
+<div style="font-weight: 600">Responsible for</div>
+<div style="line-height: 1.5">{{person.resp}}, for {{inst.featName}} on {{inst.siteName}}.</div>
+<sc-for list="{{facts}}" as="f" hint-placeholder-count="6">
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: var(--muted)">{{f.k}}</span><span style="font-weight: 600; text-align: right">{{f.v}}</span></div>
+</sc-for>
+</div>
+<div style="border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 14px; font-weight: 600">Where it's documented and live</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{srcButtons}}" as="s" hint-placeholder-count="3">
+<button type="button" onClick="{{s.pick}}" aria-haspopup="dialog" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 8px"><span style="{{s.dot}}" aria-hidden="true"></span>{{s.label}}<span style="font-size: 12px; font-weight: 600; background: var(--chip); color: var(--ink-2); padding: 2px 8px; border-radius: 999px">{{s.count}}</span></button>
+</sc-for>
+</div>
+<div style="font-size: 13px; color: var(--muted)">Radar pulls these in read-only. They feed the radar; they are not the source of truth.</div>
+</div>
+<sc-if value="{{isExec}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; background: #FCEBE4; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #8A2E0E">
+<span>Annual run cost: <strong>$[ADD FIGURE]</strong></span><span style="font-size: 12px; font-weight: 600">Executives only</span>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isAI}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch">
+<label for="aiq" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Ask the radar a question</label>
+<input id="aiq" type="text" value="{{ai.q}}" onChange="{{ai.onQ}}" onKeyDown="{{ai.onKey}}" placeholder="e.g. Who does QA for doctor finder in Neuroscience?" style="flex: 1 1 320px; min-width: 0; font: inherit; font-size: 16px; padding: 12px 16px; border: 2px solid #1F4FD1; border-radius: 12px; min-height: 48px">
+<button type="button" onClick="{{ai.submit}}" style="font: inherit; font-size: 15px; font-weight: 600; min-height: 48px; padding: 0 22px; border-radius: 12px; border: 0; background: var(--grad-primary); color: #FFFFFF; cursor: pointer">Ask</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+<span style="font-size: 13px; color: var(--muted)">Try:</span>
+<sc-for list="{{ai.suggestions}}" as="sg" hint-placeholder-count="5">
+<button type="button" onClick="{{sg.pick}}" style="font: inherit; font-size: 13px; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); cursor: pointer">{{sg.text}}</button>
+</sc-for>
+</div>
+
+<div style="background: var(--grad-soft); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: flex-start; gap: 10px">
+<span aria-hidden="true" style="flex: 0 0 28px; width: 28px; height: 28px; border-radius: 8px; background: var(--grad-primary); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 14px">✦</span>
+<div style="font-size: 15px; line-height: 1.55; color: var(--ink)">{{ai.answer}}</div>
+</div>
+<sc-if value="{{ai.hasUnderstood}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-left: 38px">
+<span style="font-size: 12px; color: var(--ink-2)">Understood as:</span>
+<sc-for list="{{ai.understood}}" as="u" hint-placeholder-count="2">
+<span style="font-size: 12px; font-weight: 600; background: var(--surface); color: var(--accent-ink); padding: 3px 9px; border-radius: 999px">{{u.text}}</span>
+</sc-for>
+</div>
+</sc-if>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{ai.ports}}" as="p" hint-placeholder-count="2">
+<div style="border: 1px solid var(--line); border-radius: 12px; overflow: hidden">
+<div style="background: var(--grad-ink); color: #FFFFFF; padding: 10px 16px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline">
+<span style="font-weight: 600; font-size: 16px"><span style="font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #C9CEDB; margin-right: 8px">Portfolio</span>{{p.name}}</span>
+<span style="font-size: 13px; color: #C9CEDB">{{p.summary}}</span>
+</div>
+<div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{p.sites}}" as="s" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline">
+<span style="font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted)">Site</span>
+<span style="font-weight: 600">{{s.name}}</span>
+<span style="font-size: 13px; color: var(--muted)">Site owner: {{s.owner}}</span>
+</div>
+<sc-for list="{{s.feats}}" as="f" hint-placeholder-count="1">
+<div style="margin-left: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<span style="font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted)">Feature</span>
+<span style="font-weight: 600">{{f.name}}</span>
+<span style="font-size: 13px; color: var(--muted)">{{f.impl}}</span>
+<span style="{{f.statusStyle}}">{{f.status}}</span>
+</div>
+<button type="button" onClick="{{f.open}}" style="font: inherit; font-size: 13px; font-weight: 600; min-height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #1F4FD1; background: var(--surface); color: var(--link); cursor: pointer">Open in radar ›</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<span style="font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); align-self: center; margin-right: 2px">Teams &amp; POCs</span>
+<sc-for list="{{f.teams}}" as="t" hint-placeholder-count="4">
+<span style="{{t.style}}"><span style="font-size: 11px; opacity: .85">{{t.team}}</span><span style="{{t.subStyle}}">{{t.poc}}</span></span>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="font-size: 13px; color: var(--muted)">Prototype: questions are matched against the sample data with simple language rules. The real build would use AbbVie's approved enterprise AI over the Radar database, with the same role-based access.</div>
+</div>
+</sc-if>
+</section>
+</sc-if>
+
+<!-- ================= STAKEHOLDER MAP (exec + PO) ================= -->
+<sc-if value="{{showExplorer}}" hint-placeholder-val="{{ true }}">
+<section style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-family: 'IBM Plex Serif', serif; font-size: 22px; font-weight: 600">Who built and runs this feature</h2>
+<div style="font-size: 14px; color: var(--muted)">{{stakeTitle}} · every team involved, its point of contact and what it's responsible for. Select a team to see its contact card above.</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px">
+<sc-for list="{{stakeSummary}}" as="s" hint-placeholder-count="4">
+<div style="background: var(--bg); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; color: var(--muted)">{{s.k}}</span>
+<span style="font-size: 20px; font-weight: 600">{{s.v}}</span>
+</div>
+</sc-for>
+</div>
+<div style="overflow-x: auto">
+<table>
+<thead><tr><th>Team</th><th>Point of contact</th><th>Responsible for</th><th>Stage</th><th>Role</th><th>Staffed by</th><th>Status</th></tr></thead>
+<tbody>
+<sc-for list="{{stakeRows}}" as="r" hint-placeholder-count="8">
+<tr style="{{r.rowStyle}}">
+<td><button type="button" onClick="{{r.pick}}" style="background: none; border: 0; padding: 4px 0; font: inherit; font-weight: 600; color: var(--link); cursor: pointer; min-height: 44px; text-align: left; display: inline-flex; align-items: center; gap: 8px"><span style="{{r.dot}}" aria-hidden="true"></span>{{r.team}}</button></td>
+<td style="font-weight: 600; white-space: nowrap">{{r.poc}}</td>
+<td style="min-width: 220px; line-height: 1.45">{{r.resp}}</td>
+<td style="white-space: nowrap">{{r.stage}}</td>
+<td><span style="{{r.raciStyle}}">{{r.raci}}</span></td>
+<td style="white-space: nowrap">{{r.staffedBy}}</td>
+<td><span style="{{r.statusStyle}}">{{r.status}}</span></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+
+<!-- ================= EXECUTIVE: BOTTOM ================= -->
+<sc-if value="{{isExec}}" hint-placeholder-val="{{ true }}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px">
+
+<section style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Decisions waiting on you</h2>
+<sc-for list="{{decisions}}" as="d" hint-placeholder-count="3">
+<div style="border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-weight: 600; font-size: 15px">{{d.title}}</div>
+<div style="font-size: 14px; color: var(--muted); line-height: 1.5">{{d.detail}}</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<span style="font-size: 13px; font-weight: 600; color: #1E6B45; background: #E6F2EB; padding: 4px 10px; border-radius: 999px">{{d.rec}}</span>
+<span style="font-size: 13px; color: var(--muted)">{{d.impact}}</span>
+</div>
+</div>
+</sc-for>
+</section>
+
+<div style="display: flex; flex-direction: column; gap: 20px">
+<section style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Ask Radar</h2>
+<label for="ask" style="font-size: 13px; color: var(--muted)">Ask anything about the portfolio</label>
+<input id="ask" type="text" value="Which brands are building a new savings tool this quarter?" style="font: inherit; font-size: 15px; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 10px; min-height: 44px">
+<div style="background: var(--bg); border-radius: 10px; padding: 14px 16px; font-size: 15px; line-height: 1.55">Two: <strong>Neuroscience · Brand G</strong> and <strong>Eye care · Brand J</strong>. Both could reuse the shared savings card block (owner: Jordan Reyes, Patient Services tech). Merging them would avoid one duplicate build.</div>
+</section>
+
+<section style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Spend by vendor</h2>
+<span style="font-size: 12px; font-weight: 600; color: #8A2E0E; background: #FCEBE4; padding: 4px 10px; border-radius: 999px">Confidential · executives only</span>
+</div>
+<sc-for list="{{vendors}}" as="v" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; font-size: 14px"><span>{{v.name}}</span><span style="font-weight: 600">{{v.pct}}</span></div>
+<div style="height: 10px; background: var(--line); border-radius: 999px; overflow: hidden"><div class="bar-fill" style="{{v.bar}}"></div></div>
+</div>
+</sc-for>
+</section>
+</div>
+</div>
+</sc-if>
+
+<!-- ================= PRODUCT OWNER: BOTTOM ================= -->
+<sc-if value="{{isPO}}" hint-placeholder-val="{{ false }}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px">
+<section style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">My projects in flight</h2>
+<sc-for list="{{myProjects}}" as="p" hint-placeholder-count="3">
+<div style="border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px"><span style="font-weight: 600">{{p.name}}</span><span style="font-size: 13px; color: var(--muted)">{{p.stage}}</span></div>
+<div style="{{p.flagStyle}}">{{p.flag}}</div>
+</div>
+</sc-for>
+</section>
+
+<section style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Teams by feature</h2>
+<sc-for list="{{contacts}}" as="c" hint-placeholder-count="5">
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px">
+<span>{{c.topic}}</span><span style="font-weight: 600; text-align: right">{{c.who}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+</sc-if>
+
+<!-- ================= VENDOR ================= -->
+<sc-if value="{{isVendor}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 20px">
+
+<div style="background: #FFF7E6; border: 1px solid #F1D9A6; border-radius: 14px; padding: 14px 18px; font-size: 14px; line-height: 1.5; color: #5C3D00">
+You're seeing only the sites and work assigned to your company. Portfolio views, the radar explorer, budgets, other vendors and roadmap items are hidden.
+</div>
+
+<section style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-family: 'IBM Plex Serif', serif; font-size: 22px; font-weight: 600">Your work orders</h2>
+<div style="overflow-x: auto">
+<table>
+<thead><tr><th>Work order</th><th>Site</th><th>Due</th><th>Status</th><th>AbbVie contact</th></tr></thead>
+<tbody>
+<sc-for list="{{workOrders}}" as="w" hint-placeholder-count="3">
+<tr><td style="font-weight: 600">{{w.id}} · {{w.title}}</td><td>{{w.site}}</td><td>{{w.due}}</td><td>{{w.status}}</td><td>{{w.contact}}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+<section style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Approved components you must reuse</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
+<sc-for list="{{components}}" as="c" hint-placeholder-count="4">
+<div style="border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-weight: 600">{{c.name}}</div>
+<div style="font-size: 13px; color: var(--muted)">{{c.ver}}</div>
+</div>
+</sc-for>
+</div>
+</section>
+</div>
+</sc-if>
+
+<!-- ================= ACCESS MATRIX ================= -->
+<section style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Who sees what</h2>
+<div style="overflow-x: auto">
+<table>
+<thead><tr><th>Information</th><th>Executive</th><th>Product owner</th><th>Vendor</th></tr></thead>
+<tbody>
+<sc-for list="{{matrix}}" as="m" hint-placeholder-count="7">
+<tr><td>{{m.item}}</td><td>{{m.exec}}</td><td>{{m.po}}</td><td>{{m.vendor}}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+</div>
+
+<!-- ================= SOURCE LINKS POPUP ================= -->
+<sc-if value="{{modalOpen}}" hint-placeholder-val="{{ false }}">
+<div class="overlay" style="position: fixed; inset: 0; background: rgba(21,25,43,.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50">
+<div role="dialog" class="dialog" aria-modal="true" aria-labelledby="srcTitle" style="background: var(--surface); border-radius: 16px; width: 100%; max-width: 640px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(21,25,43,.3); display: flex; flex-direction: column">
+<div style="padding: 20px 24px 14px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: flex-start; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; gap: 8px"><span style="{{modal.dot}}" aria-hidden="true"></span><h2 id="srcTitle" style="margin: 0; font-family: 'IBM Plex Serif', serif; font-size: 22px; font-weight: 600">{{modal.title}}</h2></div>
+<div style="font-size: 14px; color: var(--muted)">{{modal.context}}</div>
+</div>
+<button type="button" onClick="{{closeModal}}" aria-label="Close" style="font: inherit; width: 44px; height: 44px; flex: 0 0 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink)">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+</button>
+</div>
+<div role="tablist" aria-label="Source" style="display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 24px 0">
+<sc-for list="{{srcButtons}}" as="s" hint-placeholder-count="3">
+<button type="button" role="tab" onClick="{{s.pick}}" aria-selected="{{s.pressed}}" style="{{s.tabStyle}}">{{s.label}} · {{s.count}}</button>
+</sc-for>
+</div>
+<div style="padding: 12px 24px 8px; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{modal.items}}" as="it" hint-placeholder-count="5">
+<a href="#" style="text-decoration: none; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px">
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+<span style="font-weight: 600; font-size: 15px; color: var(--link)">{{it.title}}</span>
+<span style="font-size: 13px; color: var(--muted)">{{it.path}}</span>
+<span style="font-size: 13px; color: var(--muted)">{{it.meta}}</span>
+</span>
+<span style="display: flex; align-items: center; gap: 10px; flex: 0 0 auto">
+<span style="{{it.tagStyle}}">{{it.tag}}</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path></svg>
+</span>
+</a>
+</sc-for>
+</div>
+<div style="padding: 10px 24px 20px; font-size: 13px; color: var(--muted); line-height: 1.5">Pulled read-only by Radar. Links open in {{modal.app}}, using your own access. Sample links only in this prototype.</div>
+</div>
+</div>
+</sc-if>
+
+</div></script>
+<script>
+(function () {
+  var VOID = { input: 1, br: 1, img: 1, hr: 1, meta: 1, link: 1, source: 1 };
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var ENT = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
+  function dec(s) { return s.replace(/&(amp|lt|gt|quot|#39|nbsp);/g, function (m) { return ENT[m]; }); }
+
+  // ---- parse the template (tolerant: custom tags may sit anywhere, even inside tables) ----
+  function parse(str) {
+    var root = { tag: '#root', attrs: [], children: [] }, stack = [root];
+    var re = /<!--[\s\S]*?-->|<\/([a-zA-Z][\w:-]*)\s*>|<([a-zA-Z][\w:-]*)((?:\s+[^\s=\/>]+(?:\s*=\s*(?:"[^"]*"|'[^']*'))?)*)\s*(\/?)>|([^<]+)/g;
+    var m;
+    while ((m = re.exec(str))) {
+      var top = stack[stack.length - 1];
+      if (m[0].slice(0, 4) === '<!--') continue;
+      if (m[1]) { // close tag
+        for (var i = stack.length - 1; i > 0; i--) if (stack[i].tag === m[1]) { stack.length = i; break; }
+      } else if (m[2]) {
+        var attrs = [], ar = /([^\s=\/>]+)(?:\s*=\s*("([^"]*)"|'([^']*)'))?/g, a;
+        while ((a = ar.exec(m[3] || ''))) attrs.push([a[1], dec(a[3] !== undefined ? a[3] : (a[4] !== undefined ? a[4] : ''))]);
+        var el = { tag: m[2], attrs: attrs, children: [] };
+        top.children.push(el);
+        if (!m[4] && !VOID[m[2].toLowerCase()]) stack.push(el);
+      } else if (m[5]) {
+        var t = m[5];
+        if (/^\s*$/.test(t) && /\n/.test(t)) continue; // formatting whitespace
+        top.children.push({ text: dec(t) });
+      }
+    }
+    return root;
+  }
+
+  // ---- holes ----
+  function look(scope, path) {
+    path = path.trim();
+    if (path === 'true') return true; if (path === 'false') return false;
+    if (/^-?\d+(\.\d+)?$/.test(path)) return Number(path);
+    var parts = path.split('.'), v = scope;
+    for (var i = 0; i < parts.length; i++) { if (v == null) return undefined; v = v[parts[i]]; }
+    return v;
+  }
+  var WHOLE = /^\{\{\s*([^}]+?)\s*\}\}$/;
+  function interp(s, scope) {
+    var w = s.match(WHOLE); if (w) return look(scope, w[1]);
+    return s.replace(/\{\{\s*([^}]+?)\s*\}\}/g, function (_, p) { var v = look(scope, p); return v == null ? '' : String(v); });
+  }
+
+  // ---- build a virtual tree for the current values ----
+  function build(node, scope, out) {
+    if (node.text !== undefined) { out.push({ text: String(interp(node.text, scope) == null ? '' : interp(node.text, scope)) }); return; }
+    var tag = node.tag;
+    if (tag === 'sc-for') {
+      var list = null, as = 'item';
+      node.attrs.forEach(function (a) { if (a[0] === 'list') list = interp(a[1], scope); if (a[0] === 'as') as = a[1]; });
+      (list || []).forEach(function (item, i) {
+        var s2 = Object.create(scope); s2[as] = item; s2.$index = i;
+        node.children.forEach(function (c) { build(c, s2, out); });
+      });
+      return;
+    }
+    if (tag === 'sc-if') {
+      var val = false;
+      node.attrs.forEach(function (a) { if (a[0] === 'value') val = interp(a[1], scope); });
+      if (val) node.children.forEach(function (c) { build(c, scope, out); });
+      return;
+    }
+    var props = {};
+    node.attrs.forEach(function (a) {
+      var n = a[0]; if (n.indexOf('hint-') === 0) return;
+      props[n] = interp(a[1], scope);
+    });
+    var kids = [];
+    node.children.forEach(function (c) { build(c, scope, kids); });
+    out.push({ tag: tag, props: props, children: kids });
+  }
+
+  // ---- patch the real DOM in place (keeps focus and input state) ----
+  var EVT = { onClick: 'click', onChange: 'input', onInput: 'input', onKeyDown: 'keydown', onKeyUp: 'keyup', onSubmit: 'submit', onFocus: 'focus', onBlur: 'blur' };
+  function setProps(el, props) {
+    var old = el.__p || {};
+    Object.keys(old).forEach(function (k) {
+      if (!(k in props) && !EVT[k]) { el.removeAttribute(k === 'className' ? 'class' : k); }
+    });
+    Object.keys(props).forEach(function (k) {
+      var v = props[k];
+      if (EVT[k]) {
+        el.__h = el.__h || {};
+        if (!el.__h[k]) { (function (key) { el.addEventListener(EVT[key], function (e) { var h = el.__h[key]; if (typeof h === 'function') h(e); }); })(k); }
+        el.__h[k] = v; return;
+      }
+      if (k === 'value' && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+        var sv = v == null ? '' : String(v); if (el.value !== sv) el.value = sv; return;
+      }
+      if (k === 'disabled' || k === 'checked') { el[k] = !!v && v !== 'false'; return; }
+      if (v === false || v == null) { el.removeAttribute(k); return; }
+      var s = String(v);
+      if (old[k] !== s || el.getAttribute(k) !== s) el.setAttribute(k, s);
+    });
+    var stored = {}; Object.keys(props).forEach(function (k) { stored[k] = EVT[k] ? 1 : String(props[k]); });
+    el.__p = stored;
+  }
+  function create(v, ns) {
+    if (v.text !== undefined) return document.createTextNode(v.text);
+    var nsx = v.tag === 'svg' ? SVGNS : ns;
+    var el = nsx ? document.createElementNS(nsx, v.tag) : document.createElement(v.tag);
+    el.__ns = nsx; setProps(el, v.props);
+    v.children.forEach(function (c) { el.appendChild(create(c, nsx)); });
+    return el;
+  }
+  function same(dom, v, ns) {
+    if (v.text !== undefined) return dom.nodeType === 3;
+    if (dom.nodeType !== 1) return false;
+    var nsx = v.tag === 'svg' ? SVGNS : ns;
+    return (dom.__ns || null) === (nsx || null) && dom.localName === v.tag;
+  }
+  function patch(parent, vs, ns) {
+    var kids = parent.childNodes;
+    for (var i = 0; i < vs.length; i++) {
+      var v = vs[i], d = kids[i];
+      if (d && same(d, v, ns)) {
+        if (v.text !== undefined) { if (d.nodeValue !== v.text) d.nodeValue = v.text; }
+        else { setProps(d, v.props); patch(d, v.children, d.__ns); }
+      } else {
+        var n = create(v, ns);
+        if (d) parent.replaceChild(n, d); else parent.appendChild(n);
+      }
+    }
+    while (kids.length > vs.length) parent.removeChild(kids[kids.length - 1]);
+  }
+
+  // ---- component base (React-style class API) ----
+  var queued = false, inst = null, tree = null, mountEl = null, mounted = false;
+  function flush() {
+    queued = false;
+    var out = [];
+    tree.children.forEach(function (c) { build(c, inst.renderVals(), out); });
+    patch(mountEl, out, null);
+    if (!mounted) { mounted = true; if (inst.componentDidMount) inst.componentDidMount(); }
+  }
+  function schedule() { if (!queued) { queued = true; Promise.resolve().then(flush); } }
+  window.DCLogic = function DCLogic(props) { this.props = props || {}; this.state = {}; };
+  window.DCLogic.prototype.setState = function (p) {
+    var patchObj = typeof p === 'function' ? p(this.state, this.props) : p;
+    this.state = Object.assign({}, this.state, patchObj); schedule();
+  };
+  window.DCLogic.prototype.forceUpdate = schedule;
+  window.__mountDC = function (Comp, templateText, el) {
+    tree = parse(templateText); mountEl = el; inst = new Comp({}); flush();
+  };
+})();
+</script>
+<script>
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    let dark = false;
+    try {
+      const saved = window.localStorage.getItem('radar-theme');
+      dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch (e) { dark = false; }
+    this.state = { dark: dark, role: 'exec', mode: 'portfolio',port: 'Immunology', site: null, feat: null, person: 'po' };
+  }
+
+  buildData() {
+    if (this._data) return this._data;
+    const FEATS = [
+      { key: 'signup', name: 'Sign-up form', team: 'Martech CoE · Forms squad', lead: 'Maya Patel', backup: 'Chris Olsen' },
+      { key: 'savings', name: 'Savings program', team: 'Patient Services tech', lead: 'Jordan Reyes', backup: 'Hannah Kim' },
+      { key: 'hcp', name: 'HCP portal', team: 'HCP Experience squad', lead: 'Victor Alvarez', backup: 'Priya Nair' },
+      { key: 'copay', name: 'Copay tool', team: 'Patient Services tech', lead: 'Jordan Reyes', backup: 'Hannah Kim' },
+      { key: 'chat', name: 'Chat / assistant', team: 'Digital Lab · Conversational', lead: 'Elena Morales', backup: 'Ben Ortiz' },
+      { key: 'finder', name: 'Doctor finder', team: 'Web Platform squad', lead: 'Noah Grant', backup: 'Leah Sato' }
+    ];
+    const PORTS = [
+      { name: 'Immunology', code: 'IMM', vendor: 'Vendor A', brands: [['A', 'Dana Brooks'], ['B', 'Ravi Menon'], ['C', 'Lena Fischer']] },
+      { name: 'Oncology', code: 'ONC', vendor: 'Vendor B', brands: [['D', 'Marcus Hill'], ['E', 'Aisha Khan'], ['F', 'Tom Becker']] },
+      { name: 'Neuroscience', code: 'NEU', vendor: 'Vendor A', brands: [['G', 'Sofia Ruiz'], ['H', 'Ken Watanabe'], ['I', 'Grace Liu']] },
+      { name: 'Eye care', code: 'EYE', vendor: 'Vendor C', brands: [['J', 'Omar Haddad'], ['K', 'Nina Petrova'], ['L', 'Sam Carter']] },
+      { name: 'Aesthetics', code: 'AES', vendor: 'Vendor B', brands: [['M', 'Julia Romano'], ['N', 'Ethan Cole'], ['O', 'Mia Laurent']] }
+    ];
+    const TEAMS = [
+      { key: 'po', team: 'Product ownership', resp: 'Owns requirements, roadmap, priorities and final sign-off', stage: 'Discovery → Launch', raci: 'Accountable', pool: ['', '', ''] },
+      { key: 'ui', team: 'UI front-end', resp: 'Styling, responsive layout and accessibility (WCAG)', stage: 'Design → Build', raci: 'Responsible', vendorish: true, inflight: 'In progress', pool: ['Arjun Rao', 'Claire Dubois', 'Leo Martins'] },
+      { key: 'aem', team: 'AEM development', resp: 'Component build, authoring templates and dialogs', stage: 'Build', raci: 'Responsible', vendorish: true, inflight: 'In progress', pool: ['Kavya Iyer', 'Daniel Novak', 'Rosa Jimenez'] },
+      { key: 'api', team: 'API backend', resp: 'Submission and data APIs, SFMC and CRM integration', stage: 'Build', raci: 'Responsible', inflight: 'In progress', pool: ['Wei Zhang', 'Fatima Noor', 'Lucas Meyer'] },
+      { key: 'qa', team: 'End-to-end QA', resp: 'Functional, regression, cross-browser and accessibility testing', stage: 'Test', raci: 'Responsible', vendorish: true, inflight: 'Queued', pool: ['Irene Costa', 'Samir Patel', 'Ola Nilsen'] },
+      { key: 'ops', team: 'Operations & platform', resp: 'Environments, configuration, deployments and monitoring', stage: 'Release → Run', raci: 'Responsible', inflight: 'Release scheduled', pool: ['Greg Thompson', 'Anika Verma', 'Pedro Silva'] },
+      { key: 'mlr', team: 'MLR review', resp: 'Medical, legal and regulatory approval of all content', stage: 'Review', raci: 'Consulted', inflight: 'Review pending', pool: ['Rachel Stein', 'Mark Ellis', 'Joan Park'] },
+      { key: 'brand', team: 'Brand / site owner', resp: 'Approves changes on this site and owns brand messaging', stage: 'Discovery → Launch', raci: 'Consulted', pool: ['', '', ''] }
+    ];
+    const featBy = {};
+    FEATS.forEach((f) => { featBy[f.key] = f; });
+    const plats = ['AEM', 'AEM + SFMC', 'Custom React'];
+    const verified = ['Crawled 2h ago', 'Crawled 6h ago', 'Crawled yesterday'];
+    const sites = [];
+    let i = 0;
+    PORTS.forEach((p) => {
+      p.brands.forEach((b) => {
+        [0, 1].forEach((t) => {
+          const keys = [];
+          if (t === 0) {
+            keys.push('signup');
+            if (i % 3 !== 2) keys.push('savings');
+            if (i % 4 === 1) keys.push('copay');
+            if (i % 2 === 0) keys.push('chat');
+            if (i % 3 === 0) keys.push('finder');
+          } else {
+            keys.push('hcp');
+            if (i % 2 === 1) keys.push('signup');
+            if (i % 5 === 0) keys.push('chat');
+          }
+          const brand = 'Brand ' + b[0];
+          const siteName = brand + ' · ' + (t === 0 ? 'patient site' : 'HCP site');
+          const id = p.code + '-' + b[0] + t;
+          const inst = {};
+          keys.forEach((k) => {
+            let impl;
+            if (k === 'signup') impl = i % 4 === 3 ? 'Custom form (legacy)' : 'Shared sign-up v2';
+            else if (k === 'savings') impl = i % 3 === 1 ? 'Custom savings page' : 'Savings card block v1.8';
+            else if (k === 'hcp') impl = 'HCP portal template v3';
+            else if (k === 'copay') impl = 'Copay calculator v2';
+            else if (k === 'chat') impl = 'Approved-content assistant (pilot)';
+            else impl = i % 2 === 0 ? 'Locator service v1' : 'Custom finder';
+            const custom = impl.indexOf('Custom') === 0;
+            inst[k] = {
+              key: k,
+              featName: featBy[k].name,
+              siteName: siteName,
+              impl: impl,
+              shared: !custom,
+              platform: custom ? 'Custom React' : plats[(i + t) % 2],
+              status: custom ? 'Legacy · migrate' : ((i + t) % 5 === 0 ? 'Update in flight' : 'Live'),
+              verified: verified[(i + t) % 3],
+              vendor: p.vendor,
+              jira: p.code + '-' + (100 + i * 7 + t), jiraNum: 100 + i * 7 + t, code: p.code, brand: brand, port: p.name,
+              teams: TEAMS.map((tm) => {
+                const n = (i + t + k.length) % 3;
+                let poc = tm.pool[n];
+                if (tm.key === 'po') poc = featBy[k].lead;
+                if (tm.key === 'brand') poc = b[1];
+                const vendorStaffed = tm.vendorish && ((i + t + tm.key.length) % 2 === 0);
+                let status = 'Done';
+                if (custom) status = tm.key === 'ops' ? 'Running · legacy' : 'Maintenance only';
+                else if ((i + t) % 5 === 0 && tm.inflight) status = tm.inflight;
+                else if (tm.key === 'ops') status = 'Running';
+                return {
+                  key: tm.key, team: tm.team, poc: poc, resp: tm.resp, stage: tm.stage, raci: tm.raci,
+                  staffedBy: tm.key === 'brand' ? p.name + ' brand team' : (vendorStaffed ? p.vendor : 'AbbVie BTS'),
+                  status: status
+                };
+              })
+            };
+          });
+          sites.push({ id: id, port: p.name, name: siteName, type: t === 0 ? 'Patient' : 'HCP', owner: b[1], keys: keys, inst: inst });
+        });
+        i++;
+      });
+    });
+    this._data = { FEATS, PORTS, featBy, sites };
+    return this._data;
+  }
+
+  renderVals() {
+    const { FEATS, PORTS, featBy, sites } = this.buildData();
+    const st = this.state;
+    const role = st.role;
+    const isExec = role === 'exec', isPO = role === 'po', isVendor = role === 'vendor';
+
+    const tab = (on) => 'font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 0; cursor: pointer; ' +
+      (on ? 'background: #FFFFFF; color: #15192B' : 'background: transparent; color: #E4E7EF');
+    const roles = [['exec', 'Executive'], ['po', 'Product owner'], ['vendor', 'Vendor']].map(([id, label]) => ({
+      label, pressed: id === role ? 'true' : 'false', style: tab(id === role), pick: () => this.setState({ role: id, src: null })
+    }));
+    const names = { exec: 'Executive (e.g. Head of DSS, President)', po: 'Product owner', vendor: 'Vendor partner' };
+    const scopes = {
+      exec: 'Full portfolio, radar, budgets, vendors and decisions.',
+      po: 'Full radar, features and owners. No budgets or vendor spend.',
+      vendor: 'Assigned sites and work orders only.'
+    };
+
+    // ---------- aggregates ----------
+    const countIn = (port, k) => sites.filter((s) => s.port === port && s.keys.indexOf(k) >= 0).length;
+    const allInst = [];
+    sites.forEach((s) => s.keys.forEach((k) => allInst.push(s.inst[k])));
+    const sharedPct = Math.round(100 * allInst.filter((x) => x.shared).length / allInst.length);
+    const signups = allInst.filter((x) => x.key === 'signup');
+    const customSignups = signups.filter((x) => !x.shared).length;
+
+    let max = 1;
+    PORTS.forEach((p) => FEATS.forEach((f) => { max = Math.max(max, countIn(p.name, f.key)); }));
+    const heat = PORTS.map((p) => ({
+      name: p.name,
+      sites: sites.filter((s) => s.port === p.name).length,
+      rowStyle: (st.mode === 'portfolio' && st.port === p.name) ? 'background: var(--accent-soft)' : '',
+      pick: () => this.setState({ mode: 'portfolio', port: p.name, site: null, feat: null, person: 'po' }),
+      cells: FEATS.map((f) => {
+        const n = countIn(p.name, f.key);
+        const a = n === 0 ? 0.05 : 0.15 + (n / max) * 0.75;
+        const fg = a > 0.5 ? '#FFFFFF' : 'var(--ink)';
+        return {
+          n,
+          aria: n + ' ' + f.name + ' in ' + p.name + '. Open in radar.',
+          pick: () => this.setState({ mode: 'feature', feat: f.key, port: p.name, site: null, person: 'po' }),
+          style: 'font: inherit; margin: 0 auto; min-width: 48px; min-height: 44px; border: 0; border-radius: 8px; font-weight: 600; cursor: pointer; background: rgba(31,79,209,' + a.toFixed(2) + '); color: ' + fg
+        };
+      })
+    }));
+
+    // ---------- radar resolution ----------
+    const mode = st.mode;
+    let port, site, feat, portList, siteList, featList;
+    if (mode === 'portfolio') {
+      portList = PORTS.map((p) => p.name);
+      port = portList.indexOf(st.port) >= 0 ? st.port : portList[0];
+      siteList = sites.filter((s) => s.port === port);
+      site = siteList.find((s) => s.id === st.site) || siteList[0];
+      featList = site.keys;
+      feat = featList.indexOf(st.feat) >= 0 ? st.feat : featList[0];
+    } else {
+      featList = FEATS.map((f) => f.key);
+      feat = featList.indexOf(st.feat) >= 0 ? st.feat : featList[0];
+      portList = PORTS.map((p) => p.name).filter((n) => countIn(n, feat) > 0);
+      port = portList.indexOf(st.port) >= 0 ? st.port : portList[0];
+      siteList = sites.filter((s) => s.port === port && s.keys.indexOf(feat) >= 0);
+      site = siteList.find((s) => s.id === st.site) || siteList[0];
+    }
+    const inst = site.inst[feat];
+    const tm = inst.teams.find((x) => x.key === st.person) || inst.teams[0];
+    const pKey = tm.key;
+    const initials = tm.poc.split(' ').filter((w) => /^[A-Z]/.test(w)).slice(0, 2).map((w) => w[0]).join('');
+    const person = { name: tm.poc, role: 'Point of contact', team: tm.team, resp: tm.resp, initials };
+
+    const itemStyle = (on) => 'font: inherit; width: 100%; min-height: 52px; padding: 8px 10px; border-radius: 8px; cursor: pointer; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 8px; ' +
+      (on ? 'background: var(--grad-primary); color: #FFFFFF; border: 1px solid transparent' : 'background: var(--surface); color: var(--ink); border: 1px solid var(--line)');
+    const subStyle = (on) => 'font-size: 12px; color: ' + (on ? '#DDE5FB' : 'var(--muted)');
+    const mk = (on, label, sub, pick) => ({ label, sub, pick, pressed: on ? 'true' : 'false', style: itemStyle(on), subStyle: subStyle(on) });
+
+    const portItems = portList.map((n) => {
+      const ss = sites.filter((s) => s.port === n);
+      const sub = mode === 'portfolio'
+        ? ss.length + ' sites · ' + ss.reduce((a, s) => a + s.keys.length, 0) + ' features'
+        : countIn(n, feat) + ' ' + featBy[feat].name.toLowerCase() + (countIn(n, feat) === 1 ? '' : 's');
+      return mk(n === port, n, sub, () => this.setState({ port: n, site: null, feat: mode === 'portfolio' ? null : feat, person: 'po' }));
+    });
+    const siteItems = siteList.map((s) => {
+      const sub = mode === 'portfolio'
+        ? s.keys.length + ' features · PO ' + s.owner
+        : s.inst[feat].impl;
+      return mk(s.id === site.id, s.name, sub, () => this.setState({ port, site: s.id, feat: mode === 'portfolio' ? null : feat, person: 'po' }));
+    });
+    const featItems = featList.map((k) => {
+      const sub = mode === 'portfolio'
+        ? site.inst[k].impl
+        : sites.filter((s) => s.keys.indexOf(k) >= 0).length + ' across all portfolios';
+      return mk(k === feat, featBy[k].name, sub, () => this.setState({ feat: k, port, site: site.id, person: 'po' }));
+    });
+    const teamItems = inst.teams.map((x) => mk(x.key === pKey, x.team, 'POC: ' + x.poc, () => this.setState({ person: x.key, port, site: site.id, feat })));
+
+    const pill = (bg, fg) => 'display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; background: ' + bg + '; color: ' + fg;
+    const statusPill = (s) => {
+      if (s === 'Done' || s === 'Running') return pill('#E6F2EB', '#1E6B45');
+      if (s.indexOf('legacy') >= 0 || s.indexOf('Maintenance') >= 0) return pill('#FCEBE4', '#8A2E0E');
+      return pill('#FFF4DB', '#7A4B00');
+    };
+    const raciPill = (r) => r === 'Accountable' ? pill('#15192B', '#FFFFFF') : (r === 'Responsible' ? pill('#EEF2FD', '#163A9C') : pill('#EEF0F4', '#3A4052'));
+    const stakeRows = inst.teams.map((x) => ({
+      team: x.team, poc: x.poc, resp: x.resp, stage: x.stage, raci: x.raci, staffedBy: x.staffedBy, status: x.status,
+      dot: 'display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: 0 0 10px; background: ' + ({ po: 'var(--c-navy)', ui: 'var(--c-violet)', aem: 'var(--c-blue)', api: 'var(--c-teal)', qa: 'var(--c-amber)', ops: 'var(--c-slate)', mlr: 'var(--c-coral)', brand: 'var(--c-rose)' }[x.key] || 'var(--c-slate)'),
+      statusStyle: statusPill(x.status), raciStyle: raciPill(x.raci),
+      rowStyle: x.key === pKey ? 'background: var(--accent-soft)' : '',
+      pick: () => this.setState({ person: x.key, port, site: site.id, feat })
+    }));
+    const vendorCount = inst.teams.filter((x) => x.staffedBy.indexOf('Vendor') === 0).length;
+    const openCount = inst.teams.filter((x) => ['Done', 'Running'].indexOf(x.status) < 0).length;
+    const stakeSummary = [
+      { k: 'Teams involved', v: inst.teams.length + '' },
+      { k: 'Vendor-staffed', v: vendorCount + '' },
+      { k: 'Open items', v: openCount + '' },
+      { k: 'Accountable', v: inst.teams[0].poc }
+    ];
+
+    // ---------- source links (Confluence / Smartsheet / Jira) ----------
+    const T = {};
+    inst.teams.forEach((x) => { T[x.key] = x.poc; });
+    const fName = inst.featName;
+    const sp = inst.brand.replace(' ', '');
+    const tagS = (bg, fg) => 'font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; background: ' + bg + '; color: ' + fg;
+    const tGreen = tagS('#E6F2EB', '#1E6B45'), tAmber = tagS('#FFF4DB', '#7A4B00'), tGrey = tagS('#EEF0F4', '#3A4052'), tRed = tagS('#FCEBE4', '#8A2E0E');
+    const inFlight = inst.status === 'Update in flight';
+    const n0 = inst.jiraNum;
+    const SRC = {
+      confluence: {
+        label: 'Confluence', app: 'Confluence', dot: '#1F4FD1',
+        items: [
+          { title: fName + ': product requirements', path: 'Confluence › ' + inst.port + ' › ' + inst.brand + ' › ' + fName, meta: 'Owner: ' + T.po + ' · updated 3 days ago', tag: 'PRD', tagStyle: tGrey },
+          { title: 'UI design and accessibility spec', path: 'Confluence › Design system › ' + fName, meta: 'Owner: ' + T.ui + ' · updated 2 weeks ago', tag: 'Design', tagStyle: tGrey },
+          { title: 'AEM component specification', path: 'Confluence › AEM › Components › ' + inst.impl, meta: 'Owner: ' + T.aem + ' · updated 1 month ago', tag: 'Build', tagStyle: tGrey },
+          { title: 'API contract and integration notes', path: 'Confluence › Integrations › ' + fName + ' API', meta: 'Owner: ' + T.api + ' · updated 3 weeks ago', tag: 'API', tagStyle: tGrey },
+          { title: 'End-to-end test plan and results', path: 'Confluence › QA › ' + inst.brand + ' › ' + fName, meta: 'Owner: ' + T.qa + ' · last run 4 days ago', tag: 'QA', tagStyle: tGrey },
+          { title: 'Runbook: environments and configuration', path: 'Confluence › Platform ops › ' + inst.siteName, meta: 'Owner: ' + T.ops + ' · updated 1 week ago', tag: 'Ops', tagStyle: tGrey }
+        ]
+      },
+      smartsheet: {
+        label: 'Smartsheet', app: 'Smartsheet', dot: '#1E6B45',
+        items: [
+          { title: inst.port + ' digital roadmap', path: 'Smartsheet › ' + inst.port + ' › Roadmap 2026 › row ' + (n0 % 60 + 4), meta: 'Owner: ' + T.po + ' · ' + (inFlight ? 'Release planned Nov 2026' : 'Shipped'), tag: inFlight ? 'In progress' : 'Complete', tagStyle: inFlight ? tAmber : tGreen },
+          { title: 'Release calendar: ' + inst.siteName, path: 'Smartsheet › Release management › ' + inst.code, meta: 'Owner: ' + T.ops + ' · next window Oct 29', tag: 'Scheduled', tagStyle: tGrey },
+          { title: 'MLR submission tracker', path: 'Smartsheet › Content compliance › ' + inst.brand, meta: 'Owner: ' + T.mlr + ' · approval code on file', tag: inFlight ? 'Pending' : 'Approved', tagStyle: inFlight ? tAmber : tGreen },
+          { title: 'Vendor resourcing tracker', path: 'Smartsheet › Vendor management › ' + inst.vendor, meta: 'UI, AEM and QA staffing for ' + inst.port, tag: 'Resourcing', tagStyle: tGrey }
+        ]
+      },
+      jira: {
+        label: 'Jira', app: 'Jira', dot: '#B45309',
+        items: [
+          { title: inst.jira + ' · Epic: ' + fName + ' on ' + inst.siteName, path: 'Jira › ' + inst.code + ' board', meta: 'Reporter: ' + T.po + ' · 14 stories', tag: inFlight ? 'In progress' : 'Done', tagStyle: inFlight ? tAmber : tGreen },
+          { title: inst.code + '-' + (n0 + 1) + ' · Style form for mobile breakpoints', path: 'Jira › ' + inst.code + ' › Story', meta: 'Assignee: ' + T.ui, tag: inFlight ? 'In progress' : 'Done', tagStyle: inFlight ? tAmber : tGreen },
+          { title: inst.code + '-' + (n0 + 2) + ' · Build AEM component and dialog', path: 'Jira › ' + inst.code + ' › Story', meta: 'Assignee: ' + T.aem, tag: inFlight ? 'In review' : 'Done', tagStyle: inFlight ? tAmber : tGreen },
+          { title: inst.code + '-' + (n0 + 3) + ' · Submission API and SFMC handoff', path: 'Jira › ' + inst.code + ' › Story', meta: 'Assignee: ' + T.api, tag: 'Done', tagStyle: tGreen },
+          { title: inst.code + '-' + (n0 + 4) + ' · E2E regression on Safari iOS', path: 'Jira › ' + inst.code + ' › Bug', meta: 'Assignee: ' + T.qa, tag: inFlight ? 'Open' : 'Closed', tagStyle: inFlight ? tRed : tGreen },
+          { title: 'OPS-' + (n0 * 3) + ' · Configure stage and prod environments', path: 'Jira › Platform ops › Task', meta: 'Assignee: ' + T.ops, tag: 'Done', tagStyle: tGreen }
+        ]
+      }
+    };
+    const SLUG = { signup: 'sign-up', savings: 'savings-card', hcp: 'hcp/login', copay: 'copay-calculator', chat: 'ask', finder: 'find-a-doctor' };
+    const hostOf = (s) => s.name.split(' · ')[0].toLowerCase().replace(' ', '-') + (s.type === 'HCP' ? '-hcp' : '') + '.example.com';
+    const host = hostOf(site);
+    const slug = SLUG[feat];
+    const legacy = !inst.shared;
+    const liveItems = [
+      { title: 'Production: ' + fName, path: 'https://www.' + host + '/' + slug, meta: 'Live since ' + (legacy ? 'Mar 2023' : 'Jun 2025') + ' · ' + inst.verified, tag: 'Production', tagStyle: tGreen },
+      { title: 'Production: confirmation page', path: 'https://www.' + host + '/' + slug + '/thank-you', meta: 'Shown after a successful submission', tag: 'Production', tagStyle: tGreen },
+      { title: 'Stage / UAT', path: 'https://stage.' + host + '/' + slug, meta: inFlight ? 'Next release under test · owner ' + T.qa : 'Matches production · owner ' + T.ops, tag: 'Stage', tagStyle: tAmber },
+      { title: 'AEM author page', path: 'author › /content/' + site.name.split(' · ')[0].toLowerCase().replace(' ', '-') + '/en/' + slug, meta: 'Editable by content authors · owner ' + T.aem, tag: 'Author', tagStyle: tGrey }
+    ];
+    sites.filter((s) => s.id !== site.id && s.keys.indexOf(feat) >= 0).slice(0, 3).forEach((s) => {
+      liveItems.push({ title: 'Also live on ' + s.name, path: 'https://www.' + hostOf(s) + '/' + slug, meta: s.port + ' · ' + s.inst[feat].impl, tag: 'Same feature', tagStyle: tGrey });
+    });
+    SRC.live = { label: 'Live links', app: 'a new browser tab', dot: '#15192B', items: liveItems };
+    const srcKey = SRC[st.src] ? st.src : null;
+    const dotStyle = (c) => 'display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: ' + c;
+    const srcButtons = ['confluence', 'smartsheet', 'jira', 'live'].map((k) => ({
+      label: SRC[k].label, count: SRC[k].items.length + '', dot: dotStyle(SRC[k].dot),
+      pressed: k === srcKey ? 'true' : 'false',
+      tabStyle: 'font: inherit; font-size: 14px; font-weight: 600; min-height: 40px; padding: 0 14px; border-radius: 8px; cursor: pointer; ' +
+        (k === srcKey ? 'background: var(--grad-ink); color: #FFFFFF; border: 1px solid transparent' : 'background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong)'),
+      pick: () => this.setState({ src: k, port, site: site.id, feat, person: pKey })
+    }));
+    const modalOpen = !!srcKey && (isExec || isPO);
+    const modal = srcKey ? {
+      title: SRC[srcKey].label + ' links',
+      app: SRC[srcKey].app,
+      dot: dotStyle(SRC[srcKey].dot),
+      context: fName + ' on ' + inst.siteName + ' · ' + inst.port,
+      items: SRC[srcKey].items
+    } : { title: '', app: '', dot: '', context: '', items: [] };
+    const closeModal = () => this.setState({ src: null, port, site: site.id, feat, person: pKey });
+
+    const colP = { title: 'Portfolio', items: portItems, count: portItems.length + '' };
+    const colS = { title: 'Site', items: siteItems, count: siteItems.length + '' };
+    const colF = { title: 'Feature', items: featItems, count: featItems.length + '' };
+    const colT = { title: 'Team', items: teamItems, count: teamItems.length + ' teams' };
+    let columns = mode === 'portfolio' ? [colP, colS, colF, colT] : [colF, colP, colS, colT];
+    columns = columns.map((c, idx) => ({ ...c, step: (idx + 1) + '' }));
+
+    const crumbVals = mode === 'portfolio'
+      ? [['Portfolio', port], ['Site', site.name], ['Feature', featBy[feat].name], ['Team', tm.team], ['Contact', person.name]]
+      : [['Feature', featBy[feat].name], ['Portfolio', port], ['Site', site.name], ['Team', tm.team], ['Contact', person.name]];
+    const crumbs = crumbVals.map((c, idx) => ({ level: c[0], value: c[1], more: idx < crumbVals.length - 1 }));
+
+    const facts = [
+      { k: 'Role (RACI)', v: tm.raci },
+      { k: 'Stage', v: tm.stage },
+      { k: 'Staffed by', v: tm.staffedBy },
+      { k: 'Team status', v: tm.status },
+      { k: 'Implementation', v: inst.impl },
+      { k: 'Reusable', v: inst.shared ? 'Yes · shared component' : 'No · custom build' },
+      { k: 'Platform', v: inst.platform },
+      { k: 'Feature status', v: inst.status },
+      { k: 'Last verified', v: inst.verified }
+    ];
+
+    const modeTab = (on) => 'font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 14px; border-radius: 8px; border: 0; cursor: pointer; ' +
+      (on ? 'background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(21,25,43,.12)' : 'background: transparent; color: var(--ink-2)');
+    const modes = [['portfolio', 'Start from portfolio'], ['feature', 'Start from feature'], ['ai', '✦ Ask AI']].map(([id, label]) => ({
+      label, pressed: id === mode ? 'true' : 'false', style: modeTab(id === mode),
+      pick: () => id === 'ai' ? this.setState({ mode: id }) : this.setState({ mode: id, site: null, person: 'po', feat: id === 'feature' ? (st.feat || 'signup') : null })
+    }));
+
+    // ---------- AI mode (prototype: keyword understanding over the radar data) ----------
+    const isAI = mode === 'ai';
+    const qText = st.q === undefined ? 'Who owns sign-up forms in Oncology?' : st.q;
+    const asked = st.asked === undefined ? 'Who owns sign-up forms in Oncology?' : st.asked;
+    const ask = (text) => this.setState({ q: text, asked: text });
+    const ql = ' ' + asked.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ') + ' ';
+    const has = (words) => words.some((w) => ql.indexOf(' ' + w) >= 0);
+    const FEAT_WORDS = {
+      signup: ['sign-up', 'signup', 'sign up', 'registration', 'enroll', 'form'],
+      savings: ['saving', 'savings', 'card'],
+      hcp: ['hcp portal', 'portal', 'provider', 'login'],
+      copay: ['copay', 'co-pay', 'calculator'],
+      chat: ['chat', 'assistant', 'bot', 'ai assistant'],
+      finder: ['finder', 'doctor', 'locator']
+    };
+    const TEAM_WORDS = {
+      ui: ['ui', 'front-end', 'frontend', 'front end', 'styling', 'design'],
+      aem: ['aem', 'component'],
+      api: ['api', 'backend', 'back-end', 'integration'],
+      qa: ['qa', 'test', 'testing', 'tested'],
+      ops: ['ops', 'operations', 'platform', 'environment', 'config'],
+      mlr: ['mlr', 'regulatory', 'legal'],
+      po: ['owner', 'owns', 'product owner', 'accountable']
+    };
+    const qFeats = Object.keys(FEAT_WORDS).filter((k) => has(FEAT_WORDS[k]));
+    const qPorts = PORTS.map((p) => p.name).filter((n) => has([n.toLowerCase()]) || (n === 'Eye care' && has(['eye'])));
+    const bm = ql.match(/ brand ([a-o]) /);
+    const qBrand = bm ? 'Brand ' + bm[1].toUpperCase() : null;
+    const allPocs = {};
+    allInst.forEach((x) => x.teams.forEach((tt) => { allPocs[tt.poc] = true; }));
+    const qPerson = Object.keys(allPocs).find((n) => n && ql.indexOf(' ' + n.toLowerCase() + ' ') >= 0) ||
+      Object.keys(allPocs).find((n) => n && n.split(' ')[0].length > 2 && ql.indexOf(' ' + n.split(' ')[0].toLowerCase() + ' ') >= 0) || null;
+    const qTeams = Object.keys(TEAM_WORDS).filter((k) => k !== 'po' && has(TEAM_WORDS[k]));
+    const qLegacy = has(['legacy', 'custom', 'migrate']);
+    const qFlight = has(['in flight', 'in progress', 'inflight', 'update', 'open']);
+    const understood = [];
+    if (qFeats.length) understood.push(qFeats.map((k) => featBy[k].name).join(', '));
+    if (qPorts.length) understood.push(qPorts.join(', '));
+    if (qBrand) understood.push(qBrand);
+    if (qPerson) understood.push(qPerson);
+    if (qTeams.length) understood.push(qTeams.map((k) => inst.teams.find((x) => x.key === k).team).join(', '));
+    if (qLegacy) understood.push('Legacy builds');
+    if (qFlight) understood.push('In flight');
+
+    let hits = [];
+    sites.forEach((s) => s.keys.forEach((k) => {
+      const x = s.inst[k];
+      if (qFeats.length && qFeats.indexOf(k) < 0) return;
+      if (qPorts.length && qPorts.indexOf(s.port) < 0) return;
+      if (qBrand && s.name.indexOf(qBrand + ' ') !== 0) return;
+      if (qPerson && !x.teams.some((tt) => tt.poc === qPerson)) return;
+      if (qLegacy && x.shared) return;
+      if (qFlight && x.status !== 'Update in flight') return;
+      hits.push({ s, k, x });
+    }));
+    const filtered = understood.length > 0;
+    if (!filtered) hits = [];
+
+    const chip = (on) => 'display: inline-flex; flex-direction: column; gap: 1px; font-size: 13px; padding: 6px 10px; border-radius: 8px; ' +
+      (on ? 'background: var(--grad-primary); color: #FFFFFF' : 'background: var(--bg); color: var(--ink); border: 1px solid var(--line)');
+    const aiPorts = [];
+    hits.forEach((h) => {
+      let pn = aiPorts.find((p) => p.name === h.s.port);
+      if (!pn) { pn = { name: h.s.port, sites: [], n: 0 }; aiPorts.push(pn); }
+      let sn = pn.sites.find((x) => x.id === h.s.id);
+      if (!sn) { sn = { id: h.s.id, name: h.s.name, owner: h.s.owner, feats: [] }; pn.sites.push(sn); }
+      pn.n++;
+      const teamsShown = h.x.teams.filter((tt) => !qTeams.length || qTeams.indexOf(tt.key) >= 0 || tt.key === 'po');
+      sn.feats.push({
+        name: h.x.featName, impl: h.x.impl, status: h.x.status, statusStyle: statusPill(h.x.status === 'Live' ? 'Done' : h.x.status),
+        teams: teamsShown.map((tt) => {
+          const on = (qPerson && tt.poc === qPerson) || (qTeams.indexOf(tt.key) >= 0);
+          return { team: tt.team, poc: tt.poc, style: chip(on), subStyle: 'font-weight: 600' };
+        }),
+        open: () => this.setState({ mode: 'portfolio', port: h.s.port, site: h.s.id, feat: h.k, person: qPerson ? (h.x.teams.find((tt) => tt.poc === qPerson) || {}).key || 'po' : (qTeams[0] || 'po'), src: null })
+      });
+    });
+    aiPorts.forEach((p) => { p.summary = p.n + ' match' + (p.n === 1 ? '' : 'es') + ' · ' + p.sites.length + ' site' + (p.sites.length === 1 ? '' : 's'); });
+
+    let aiAnswer;
+    if (!filtered) {
+      aiAnswer = "I couldn't match that to a feature, portfolio, brand, team or person yet. Try one of the suggestions below.";
+    } else if (!hits.length) {
+      aiAnswer = 'No matches for ' + understood.join(' + ') + '. Nothing like that is live right now, so this could be a new build. Check with the feature owner before starting.';
+    } else {
+      const nSites = new Set(hits.map((h) => h.s.id)).size;
+      const legacyN = hits.filter((h) => !h.x.shared).length;
+      const label = qFeats.length === 1 ? featBy[qFeats[0]].name.toLowerCase() + (hits.length === 1 ? '' : 's') : 'feature instance' + (hits.length === 1 ? '' : 's');
+      aiAnswer = 'Found ' + hits.length + ' ' + label + ' across ' + aiPorts.length + ' portfolio' + (aiPorts.length === 1 ? '' : 's') + ' and ' + nSites + ' site' + (nSites === 1 ? '' : 's') + '.';
+      if (qFeats.length === 1) aiAnswer += ' Accountable product owner: ' + featBy[qFeats[0]].lead + '.';
+      if (qPerson) {
+        const roleSet = {};
+        hits.forEach((h) => h.x.teams.forEach((tt) => { if (tt.poc === qPerson) roleSet[tt.team] = true; }));
+        aiAnswer += ' ' + qPerson + ' is involved as ' + Object.keys(roleSet).join(', ') + '.';
+      }
+      if (qTeams.length) {
+        const pocSet = {};
+        hits.forEach((h) => h.x.teams.forEach((tt) => { if (qTeams.indexOf(tt.key) >= 0) pocSet[tt.poc] = true; }));
+        aiAnswer += ' Points of contact for that team: ' + Object.keys(pocSet).join(', ') + '.';
+      }
+      if (legacyN && !qLegacy) aiAnswer += ' ' + legacyN + ' of them are legacy custom builds worth migrating.';
+    }
+    const suggestions = [
+      'Who owns sign-up forms in Oncology?',
+      'Who does QA for doctor finder?',
+      'Where is Arjun Rao involved?',
+      'Show legacy savings programs',
+      'What is in flight on Brand A?'
+    ].map((s) => ({ text: s, pick: () => ask(s) }));
+    const ai = {
+      q: qText,
+      onQ: (e) => this.setState({ q: e.target.value }),
+      onKey: (e) => { if (e.key === 'Enter') ask(e.target.value); },
+      submit: () => ask(qText),
+      answer: aiAnswer,
+      understood: understood.map((u) => ({ text: u })),
+      hasUnderstood: understood.length > 0,
+      ports: aiPorts,
+      suggestions
+    };
+
+    // ---------- other panels ----------
+    const kpis = [
+      { label: 'Live sites', value: sites.length + '', note: '+3 this week', noteColor: 'var(--good)', grad: 'linear-gradient(135deg,#0E8F80,#3CCDB8)', accent: 'var(--c-teal)', tint: 'rgba(14,143,128,.12)', icon: '◉' },
+      { label: 'Feature instances tracked', value: allInst.length + '', note: FEATS.length + ' feature types · 5 portfolios', noteColor: 'var(--muted)', grad: 'linear-gradient(135deg,#1F4FD1,#6F93FF)', accent: 'var(--c-blue)', tint: 'rgba(31,79,209,.12)', icon: '▦' },
+      { label: 'Duplicate builds in flight', value: '4', note: '1 new since yesterday', noteColor: 'var(--bad)', grad: 'linear-gradient(135deg,#D2533F,#F2B44B)', accent: 'var(--c-coral)', tint: 'rgba(210,83,63,.12)', icon: '⧉' },
+      { label: 'Shared-component reuse', value: sharedPct + '%', note: 'Target: 90% by Q4', noteColor: 'var(--muted)', grad: 'linear-gradient(135deg,#6A4BD6,#C2417A)', accent: 'var(--c-violet)', tint: 'rgba(106,75,214,.12)', icon: '↻' }
+    ];
+    const decisions = [
+      { title: 'Move ' + customSignups + ' custom sign-up forms onto the shared component', detail: signups.length + ' sign-up forms are live. ' + customSignups + ' are custom builds on separate stacks, each needing its own MLR review and maintenance.', rec: 'Recommend: approve', impact: 'Est. savings: $[ADD FIGURE]' },
+      { title: 'Two teams starting savings tools this quarter', detail: 'Neuroscience (Brand G) and Eye care (Brand J) both plan new builds. The shared savings card block covers both.', rec: 'Recommend: merge', impact: 'Avoids 1 duplicate build' },
+      { title: 'Vendor renewal: overlapping contracts', detail: 'Vendor A and Vendor B maintain near-identical sites across four portfolios.', rec: 'Recommend: review at QBR', impact: 'Leverage for rate negotiation' }
+    ];
+    const vendors = [['Vendor A', 38, 'linear-gradient(90deg,#1F4FD1,#6F93FF)'], ['Vendor B', 27, 'linear-gradient(90deg,#0E8F80,#3CCDB8)'], ['Vendor C', 21, 'linear-gradient(90deg,#6A4BD6,#C2417A)'], ['Other', 14, 'linear-gradient(90deg,#5B6886,#9AA6C4)']].map(([name, w, c], i) => ({
+      name, pct: w + '%', bar: 'height: 10px; border-radius: 999px; background: ' + c + '; width: ' + w + '%; animation-delay: ' + (i * 0.1) + 's'
+    }));
+
+    const tagOk = 'font-size: 13px; font-weight: 600; color: #1E6B45; background: #E6F2EB; padding: 4px 10px; border-radius: 999px; white-space: nowrap';
+    const tagWarn = 'font-size: 13px; font-weight: 600; color: #8A2E0E; background: #FCEBE4; padding: 4px 10px; border-radius: 999px; white-space: nowrap';
+    const sharedSignupSites = signups.filter((x) => x.shared).length;
+    const found = [
+      { name: 'Shared sign-up v2', where: sharedSignupSites + ' sites, all portfolios', platform: 'AEM + SFMC', owner: 'Maya Patel · Forms squad', reuse: 'Ready to reuse', tag: tagOk },
+      { name: 'Custom form (legacy)', where: customSignups + ' sites', platform: 'Custom React', owner: 'Site product owners', reuse: 'Migrate', tag: tagWarn }
+    ];
+    const signupLine = signups.length + ' sign-up forms found on ' + signups.length + ' sites.';
+    const flagWarn = 'font-size: 14px; line-height: 1.5; color: #8A2E0E; background: #FCEBE4; padding: 8px 12px; border-radius: 8px';
+    const flagOk = 'font-size: 14px; line-height: 1.5; color: #1E6B45; background: #E6F2EB; padding: 8px 12px; border-radius: 8px';
+    const myProjects = [
+      { name: 'Brand G savings program', stage: 'Intake', flag: 'Overlap: the shared savings card block already does this. Talk to Jordan Reyes before scoping.', flagStyle: flagWarn },
+      { name: 'Brand H HCP portal refresh', stage: 'Design', flag: 'Reusing HCP portal template v3. No overlap found.', flagStyle: flagOk },
+      { name: 'Brand I doctor finder', stage: 'Build', flag: 'Locator service v1 is live on 5 sites. Consider reusing it (Noah Grant).', flagStyle: flagWarn }
+    ];
+    const contacts = FEATS.map((f) => ({ topic: f.name, who: f.lead + ' · ' + f.team }));
+
+    const workOrders = [
+      { id: 'WO-1042', title: 'Hero and ISI update', site: 'Brand D · patient site', due: 'Oct 24', status: 'In progress', contact: 'Marcus Hill' },
+      { id: 'WO-1047', title: 'Migrate form to shared sign-up v2', site: 'Brand E · patient site', due: 'Nov 7', status: 'Not started', contact: 'Maya Patel' },
+      { id: 'WO-1051', title: 'Accessibility fixes (WCAG 2.2 AA)', site: 'Brand F · HCP site', due: 'Nov 14', status: 'Not started', contact: 'Tom Becker' }
+    ];
+    const components = [
+      { name: 'Sign-up form', ver: 'v2.3 · AEM + SFMC' },
+      { name: 'ISI module', ver: 'v4.0 · auto-synced to label' },
+      { name: 'Savings card block', ver: 'v1.8' },
+      { name: 'Consent banner', ver: 'v3.1' }
+    ];
+
+    const Y = 'Yes', N = '—';
+    const matrix = [
+      { item: 'Daily brief, KPIs and portfolio heatmap', exec: Y, po: N, vendor: N },
+      { item: 'Radar explorer (portfolio → site → feature → team → contact)', exec: Y, po: Y, vendor: N },
+      { item: 'Stakeholder map (teams, POCs, responsibilities)', exec: Y, po: Y, vendor: N },
+      { item: 'Decisions queue', exec: Y, po: N, vendor: N },
+      { item: 'Budgets, run costs and vendor spend', exec: Y, po: N, vendor: N },
+      { item: 'Feature search and owners', exec: Y, po: Y, vendor: 'Own sites only' },
+      { item: 'Projects in flight and overlap alerts', exec: Y, po: Y, vendor: N },
+      { item: 'Work orders and component standards', exec: Y, po: Y, vendor: 'Own work only' }
+    ];
+
+    return {
+      appCls: st.dark ? 'app dark' : 'app',
+      isDark: !!st.dark, isLight: !st.dark, darkPressed: st.dark ? 'true' : 'false',
+      themeLabel: st.dark ? 'Light mode' : 'Dark mode',
+      toggleTheme: () => {
+        const next = !this.state.dark;
+        try { window.localStorage.setItem('radar-theme', next ? 'dark' : 'light'); } catch (e) {}
+        this.setState({ dark: next });
+      },
+      roles, roleName: names[role], roleScope: scopes[role],
+      isCols: mode === 'portfolio' || mode === 'feature',
+      isExec, isPO, isVendor, showExplorer: isExec || isPO,
+      capNames: FEATS.map((f) => f.name), heat, kpis, decisions, vendors,
+      modes, crumbs, columns, contactStep: '5', person, inst, facts,
+      srcButtons, modalOpen, modal, closeModal, isAI, notAI: !isAI, ai,
+      stakeRows, stakeSummary, stakeTitle: featBy[feat].name + ' on ' + site.name,
+      found, signupLine, myProjects, contacts,
+      workOrders, components, matrix
+    };
+  }
+}
+
+window.__mountDC(Component, document.getElementById('dc-template').textContent, document.getElementById('app'));
+</script>
+</body>
+</html>
